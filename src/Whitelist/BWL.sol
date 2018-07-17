@@ -1,7 +1,7 @@
 pragma solidity ^0.4.21;
 
-import "./Controlled.sol";
-import "./ERC20Interface.sol";
+import "../Libs/Controlled.sol";
+import "../Libs/ERC20Interface.sol";
 
 /// @dev Briq Whitelist
 contract BriqWhitelist is Controlled {

@@ -1,7 +1,7 @@
 pragma solidity ^0.4.21;
 
 import "./WhitelistInterface.sol";
-import "./ClaimableTokensInterface.sol";
+import "../Libs/ClaimableTokensInterface.sol";
 
 /// @dev Briq Whitelist Interface
 contract BWLInterface is WhitelistInterface, ClaimableTokensInterface {
