@@ -1,28 +1,28 @@
 pragma solidity ^0.4.21;
 
-import "./SafeMath.sol";
-import "./Controlled.sol";
-import "./WhitelistInterface.sol";
+import "../Libs/SafeMath.sol";
+import "../Libs/Controlled.sol";
+import "../Whitelist/WhitelistInterface.sol";
 
 /// @dev History Token
 contract HistoryToken is Controlled {
     using SafeMath for uint256;
 
-    // Token identifier or code, usually acronym 
-    string public symbol; 
+    // Token identifier or code, usually acronym
+    string public symbol;
 
-    // Number of decimals of the smallest unit                
+    // Number of decimals of the smallest unit
     uint8 public decimals;
 
-    // Timestamp representing start of token validity, inclusive              
+    // Timestamp representing start of token validity, inclusive
     uint256 public startDate;
-    
+
     // Timestamp representing start of token validity, inclusive
     uint256 public maturityDate;
 
     // Reference to whitelist contract
     WhitelistInterface public whitelist;
-    
+
     /// @dev `Checkpoint` is the structure that attaches a block number to a
     ///  given value, the block number attached is the one that last changed the value
     struct  Checkpoint {
@@ -65,7 +65,7 @@ contract HistoryToken is Controlled {
         mintCap = _mintCap;
         startDate = _startDate;
         maturityDate = _maturityDate;
-        whitelist = WhitelistInterface(_whitelist);                        
+        whitelist = WhitelistInterface(_whitelist);
         transfersEnabled = true;
         active = true;
     }
@@ -242,7 +242,7 @@ contract HistoryToken is Controlled {
         emit Transfer(address(0), _owner, _amount);
         return true;
     }
-    
+
 ////////////////
 // Enable tokens transfers, closing and validity check
 ////////////////
@@ -291,7 +291,7 @@ contract HistoryToken is Controlled {
     /// @param _block The block number to retrieve the value at
     /// @return The number of tokens being queried
     function getValueAt(Checkpoint[] storage checkpoints, uint256 _block) view internal returns (uint256) {
-        if (checkpoints.length == 0) 
+        if (checkpoints.length == 0)
             return 0;
 
         // Shortcut for the actual value
@@ -399,8 +399,8 @@ contract DividendHistoryToken is HistoryToken {
     uint256 currentSupply = totalSupplyAt(block.number);
     require(currentSupply > 0);
     uint256 dividendIndex = dividends.length;
-    require(block.number > 0);    
-    uint256 blockNumber = block.number - 1; 
+    require(block.number > 0);
+    uint256 blockNumber = block.number - 1;
     dividends.push(Dividend(blockNumber, now, _amount, 0, currentSupply));
     emit DividendDeposited(msg.sender, blockNumber, _amount, currentSupply, dividendIndex);
   }
@@ -465,7 +465,7 @@ contract DividendHistoryToken is HistoryToken {
     }
     return sumOfDividends;
   }
-  
+
 ////////////////
 // Events
 ////////////////
@@ -503,4 +503,3 @@ contract BriqFundToken is DividendHistoryToken {
     }
 
 }
-

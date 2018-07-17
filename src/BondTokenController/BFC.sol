@@ -1,19 +1,19 @@
 pragma solidity ^0.4.21;
 pragma experimental ABIEncoderV2;
 
-import "./SafeMath.sol";
-import "./ERC20Interface.sol";
-import "./Ownable.sol";
-import "./EURTokenInterface.sol";
-import "./BWLInterface.sol";
-import "./BFTInterface.sol";
-import "./BFTFactoryInterface.sol";
+import "../Libs/SafeMath.sol";
+import "../Libs/ERC20Interface.sol";
+import "../Libs/Ownable.sol";
+import "../BondTokens/EURTokenInterface.sol";
+import "../Whitelist/BWLInterface.sol";
+import "../BondTokens/BFTInterface.sol";
+import "../BondTokens/BFTFactoryInterface.sol";
 
 /// @dev Briq Funds Controller
 contract BriqFundsController is Ownable {
     using SafeMath for uint256;
 
-    /// @dev `FundTokenIndex` is the structure that represents 
+    /// @dev `FundTokenIndex` is the structure that represents
     ///  fund token index in fundTokens array
     struct FundTokenIndex {
         // `index` where fund token is in fundTokens array
@@ -27,7 +27,7 @@ contract BriqFundsController is Ownable {
 
     // Array representing the fund tokens
     BFTInterface[] public fundTokens;
-    
+
     // EUR token reference
     EURTokenInterface public eurToken;
 
@@ -91,13 +91,13 @@ contract BriqFundsController is Ownable {
         bytes32 symbolHash = keccak256(_symbol);
         require(!indexes[symbolHash].exists);
         address tokenAddress = factory.createBriqFundToken(
-            _name, 
-            _symbol, 
+            _name,
+            _symbol,
             _mintCap,
-            _startDate, 
-            _maturityDate, 
-            whitelist, 
-            _documentURL, 
+            _startDate,
+            _maturityDate,
+            whitelist,
+            _documentURL,
             _documentHash
         );
         indexes[symbolHash] = FundTokenIndex(fundTokens.length, true);
@@ -204,7 +204,7 @@ contract BriqFundsController is Ownable {
         }
         return sumOfDividends;
     }
-    
+
 
     /// @notice This method can be used to extract mistakenly sent tokens to fund
     ///  token contract identified with _symbol.
@@ -243,7 +243,7 @@ contract BriqFundsController is Ownable {
     function burnEURToken(uint256 _value, address _from) public onlyOwner returns (bool) {
         return eurToken.burn(_value, _from);
     }
-    
+
     /// @notice Enables or disables EUR token transfers
     /// @param _transfersEnabled True if transfers should be enabled
     function enableEURTokenTransfers(bool _transfersEnabled) public onlyOwner {
@@ -349,6 +349,6 @@ contract BriqFundsController is Ownable {
 // Events
 ////////////////
 
-    event ClaimedTokens(address indexed _token, address indexed _owner, uint256 _amount); 
+    event ClaimedTokens(address indexed _token, address indexed _owner, uint256 _amount);
 
 }

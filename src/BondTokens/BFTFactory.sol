@@ -1,8 +1,8 @@
 pragma solidity ^0.4.21;
 
 import "./BFT.sol";
-import "./Controlled.sol";
-import "./ERC20Interface.sol";
+import "../Libs/Controlled.sol";
+import "../Libs/ERC20Interface.sol";
 
 /// @dev Briq Fund Token Factory
 contract BFTFactory is Controlled {
@@ -18,23 +18,23 @@ contract BFTFactory is Controlled {
     /// @param _documentHash Integrity check of IPFS stored JSON doc
     /// @return The address of the fund token
     function createBriqFundToken(
-        string _name, 
-        string _symbol, 
-        uint256 _mintCap, 
-        uint256 _startDate, 
-        uint256 _maturityDate, 
-        address _whitelist, 
-        string _documentURL, 
+        string _name,
+        string _symbol,
+        uint256 _mintCap,
+        uint256 _startDate,
+        uint256 _maturityDate,
+        address _whitelist,
+        string _documentURL,
         uint256 _documentHash
     ) public onlyController returns (address) {
         BriqFundToken token = new BriqFundToken(
-            _name, 
-            _symbol, 
+            _name,
+            _symbol,
             _mintCap,
-            _startDate, 
-            _maturityDate, 
-            _whitelist, 
-            _documentURL, 
+            _startDate,
+            _maturityDate,
+            _whitelist,
+            _documentURL,
             _documentHash
         );
         token.changeController(controller);
@@ -62,9 +62,6 @@ contract BFTFactory is Controlled {
         emit ClaimedTokens(_token, controller, balance);
     }
 
-    event ClaimedTokens(address indexed _token, address indexed _owner, uint256 _amount);  
+    event ClaimedTokens(address indexed _token, address indexed _owner, uint256 _amount);
 
 }
-
-
-

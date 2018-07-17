@@ -1,9 +1,9 @@
 pragma solidity ^0.4.21;
 
-import "./Controlled.sol";
-import "./SafeMath.sol";
-import "./ERC20Interface.sol";
-import "./WhitelistInterface.sol";
+import "../Libs/Controlled.sol";
+import "../Libs/SafeMath.sol";
+import "../Libs/ERC20Interface.sol";
+import "../Whitelist/WhitelistInterface.sol";
 
 /// @dev Briq EUR Token
 contract BriqEURToken is ERC20Interface, Controlled {
@@ -20,7 +20,7 @@ contract BriqEURToken is ERC20Interface, Controlled {
 
     // Number of token's decimals
     uint8 public constant decimals = 18;
-    
+
     // Flag indicating if transfers are enabled
     bool public transfersEnabled = true;
 
@@ -44,7 +44,7 @@ contract BriqEURToken is ERC20Interface, Controlled {
     function enableTransfers(bool _transfersEnabled) public onlyController {
         transfersEnabled = _transfersEnabled;
     }
-     
+
     /// @notice Transfer token for a specified address
     /// @param _to The address to transfer to.
     /// @param _value The amount to be transferred.
@@ -60,7 +60,7 @@ contract BriqEURToken is ERC20Interface, Controlled {
     function balanceOf(address _owner) public view returns (uint256 balance) {
         return balances[_owner];
     }
-  
+
     /// @dev Internal function to transfer tokens from one address to another
     /// @param _from address The address which you want to send tokens from
     /// @param _to address The address which you want to transfer to
@@ -83,7 +83,7 @@ contract BriqEURToken is ERC20Interface, Controlled {
     /// @return True if transfer successful
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         // The controller of this contract can move tokens around at will,
-        //  this is important to recognize! 
+        //  this is important to recognize!
         if (msg.sender != controller) {
             require(transfersEnabled);
             require(_value <= allowed[_from][msg.sender]);
@@ -163,8 +163,8 @@ contract BriqEURToken is ERC20Interface, Controlled {
     /// @param _from The address from which tokens are burned.
     /// @return A boolean that indicates if the operation was successful.
     function burn(uint256 _value, address _from) public onlyController returns (bool) {
-        totalSupply = totalSupply.sub(_value); 
-        balances[_from] = balances[_from].sub(_value); 
+        totalSupply = totalSupply.sub(_value);
+        balances[_from] = balances[_from].sub(_value);
         emit Burn(_from, _value);
         emit Transfer(_from, address(0), _value);
         return true;
@@ -195,4 +195,3 @@ contract BriqEURToken is ERC20Interface, Controlled {
     event Burn(address indexed _from, uint256 _value);
     event ClaimedTokens(address indexed _token, address indexed _controller, uint256 _amount);
 }
-
