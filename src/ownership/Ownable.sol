@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
 /// @dev Ownable
 contract Ownable {
@@ -7,7 +7,7 @@ contract Ownable {
     address public owner;
 
     /// @notice Constructor to initiate a Ownable contract
-    function Ownable() public {
+    constructor() public {
         owner = msg.sender;
     }
 
@@ -26,5 +26,4 @@ contract Ownable {
     }
 
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
-
 }
