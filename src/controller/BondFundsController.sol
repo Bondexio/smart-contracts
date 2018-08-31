@@ -1,19 +1,19 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 pragma experimental ABIEncoderV2;
 
-import "../Libs/SafeMath.sol";
-import "../Libs/ERC20Interface.sol";
-import "../Libs/Ownable.sol";
-import "../BondTokens/EURTokenInterface.sol";
-import "../Whitelist/BWLInterface.sol";
-import "../BondTokens/BFTInterface.sol";
-import "../BondTokens/BFTFactoryInterface.sol";
+import "../libs/SafeMath.sol";
+import "../interfaces/ERC20Interface.sol";
+import "../ownership/Ownable.sol";
+import "../interfaces/EURTokenInterface.sol";
+import "../interfaces/BWLInterface.sol";
+import "../interfaces/BFTInterface.sol";
+import "../interfaces/BFTFactoryInterface.sol";
 
-/// @dev Briq Funds Controller
-contract BriqFundsController is Ownable {
+/// @dev Bond Funds Controller
+contract BondFundsController is Ownable {
     using SafeMath for uint256;
 
-    /// @dev `FundTokenIndex` is the structure that represents
+    /// @dev `FundTokenIndex` is the structure that represents 
     ///  fund token index in fundTokens array
     struct FundTokenIndex {
         // `index` where fund token is in fundTokens array
@@ -27,7 +27,7 @@ contract BriqFundsController is Ownable {
 
     // Array representing the fund tokens
     BFTInterface[] public fundTokens;
-
+    
     // EUR token reference
     EURTokenInterface public eurToken;
 
@@ -41,8 +41,8 @@ contract BriqFundsController is Ownable {
 // Constructor
 ////////////////
 
-    /// @notice Constructor to create a HistoryToken
-    function BriqFundsController(address _whitelist, address _eurToken, address _factory) public {
+    /// @notice Constructor to create a controller
+    constructor(address _whitelist, address _eurToken, address _factory) public {
         require(_whitelist != address(0));
         require(_eurToken != address(0));
         require(_factory != address(0));
@@ -59,7 +59,7 @@ contract BriqFundsController is Ownable {
     /// @param _symbol The symbol or acronym fund is identified with
     /// @return Fund token contract through BFTInterface
     function getFundBySymbol(string _symbol) public view returns (BFTInterface) {
-        bytes32 symbolHash = keccak256(_symbol);
+        bytes32 symbolHash = keccak256(abi.encodePacked(_symbol));
         FundTokenIndex memory indexStruct = indexes[symbolHash];
         require(indexStruct.exists && indexStruct.index < fundTokens.length);
         BFTInterface fundToken = fundTokens[indexStruct.index];
@@ -67,10 +67,10 @@ contract BriqFundsController is Ownable {
     }
 
 //////////
-// Briq Fund Token proxy functions
+// Bond Fund Token proxy functions
 //////////
 
-    /// @notice Creates new briq fund token contract
+    /// @notice Creates new bond fund token contract
     /// @param _name The name of the fund
     /// @param _symbol The symbol or acronym fund is identified with
     /// @param _mintCap Maximum amount of fund tokens in circulation
@@ -79,7 +79,7 @@ contract BriqFundsController is Ownable {
     /// @param _documentURL IPFS URL
     /// @param _documentHash Integrity check of IPFS stored JSON doc
     /// @return Deployed fund token contract address
-    function createBriqFundToken(
+    function createBondFundToken(
         string _name,
         string _symbol,
         uint256 _mintCap,
@@ -88,16 +88,16 @@ contract BriqFundsController is Ownable {
         string _documentURL,
         uint256 _documentHash
     ) public onlyOwner returns (address) {
-        bytes32 symbolHash = keccak256(_symbol);
+        bytes32 symbolHash = keccak256(abi.encodePacked(_symbol));
         require(!indexes[symbolHash].exists);
-        address tokenAddress = factory.createBriqFundToken(
-            _name,
-            _symbol,
+        address tokenAddress = factory.createBondFundToken (
+            _name, 
+            _symbol, 
             _mintCap,
-            _startDate,
-            _maturityDate,
-            whitelist,
-            _documentURL,
+            _startDate, 
+            _maturityDate, 
+            whitelist, 
+            _documentURL, 
             _documentHash
         );
         indexes[symbolHash] = FundTokenIndex(fundTokens.length, true);
@@ -108,7 +108,7 @@ contract BriqFundsController is Ownable {
     /// @notice Enables or disables fund token transfers
     /// @param _symbol The symbol or acronym fund is identified with
     /// @param _transfersEnabled True if transfers should be enabled
-    function enableBriqFundTokenTransfers(string _symbol, bool _transfersEnabled) public onlyOwner {
+    function enableBondFundTokenTransfers(string _symbol, bool _transfersEnabled) public onlyOwner {
         BFTInterface fundToken = getFundBySymbol(_symbol);
         fundToken.enableTransfers(_transfersEnabled);
     }
@@ -117,7 +117,7 @@ contract BriqFundsController is Ownable {
     /// @param _symbol The symbol or acronym fund is identified with
     /// @param _owner Address on which tokens are minted
     /// @param _amount Amount of minted tokens
-    function mintBriqFundToken(string _symbol, address _owner, uint256 _amount) public onlyOwner {
+    function mintBondFundToken(string _symbol, address _owner, uint256 _amount) public onlyOwner {
         require(_owner != address(0));
         BFTInterface fundToken = getFundBySymbol(_symbol);
         if (!whitelist.isWhitelisted(_owner)){
@@ -132,14 +132,14 @@ contract BriqFundsController is Ownable {
     /// @param _to The address of the recipient
     /// @param _amount The amount of tokens to be transferred
     /// @return True if the transfer was successful
-    function transferFromBriqFundToken(string _symbol, address _from, address _to, uint256 _amount) public onlyOwner returns (bool success) {
+    function transferFromBondFundToken(string _symbol, address _from, address _to, uint256 _amount) public onlyOwner returns (bool success) {
         BFTInterface fundToken = getFundBySymbol(_symbol);
         return fundToken.transferFrom(_from, _to, _amount);
     }
 
     /// @notice Close the fund, can be called only once when fund matures
     /// @param _symbol The symbol or acronym fund is identified with
-    function closeBriqFundToken(string _symbol) public onlyOwner {
+    function closeBondFundToken(string _symbol) public onlyOwner {
         BFTInterface fundToken = getFundBySymbol(_symbol);
         fundToken.close();
     }
@@ -147,7 +147,7 @@ contract BriqFundsController is Ownable {
     /// @notice This method can be used to deposit dividends
     /// @param _symbol The symbol or acronym fund is identified with
     /// @param _amount The amount that is going to be created as new dividend
-    function depositDividendBriqFundToken(string _symbol, uint256 _amount) public onlyOwner {
+    function depositDividendBondFundToken(string _symbol, uint256 _amount) public onlyOwner {
         BFTInterface fundToken = getFundBySymbol(_symbol);
         fundToken.depositDividend(_amount);
     }
@@ -155,7 +155,7 @@ contract BriqFundsController is Ownable {
     /// @notice This method can be used to deposit multiple dividends at once
     /// @param _symbols Symbols or acronyms funds are identified with
     /// @param _amounts Amounts which are going to be used as base for new dividends
-    function bulkDepositDividendBriqFundToken(string[] _symbols, uint256[] _amounts) public onlyOwner {
+    function bulkDepositDividendBondFundToken(string[] _symbols, uint256[] _amounts) public onlyOwner {
         require(_symbols.length == _amounts.length && _symbols.length > 0);
         for (uint256 i = 0; i < _symbols.length; i++) {
             BFTInterface fundToken = getFundBySymbol(_symbols[i]);
@@ -165,23 +165,30 @@ contract BriqFundsController is Ownable {
         }
     }
 
-    /// @notice Calculates available dividends for `_owner` address
-    /// @param _symbol The symbol or acronym fund is identified with
-    /// @param _owner Address of belonging amount
+    /// @notice Calculates available dividends for all funds for `_fundWallets` addresses
+    /// @param _fundWallets Addresses having fund tokens
     /// @return The total amount of available EUR tokens for claim
-    function unclaimedDividends(string _symbol, address _owner) public view returns (uint256) {
-        BFTInterface fundToken = getFundBySymbol(_symbol);
-        return fundToken.unclaimedDividends(_owner);
+    function unclaimedDividends(address[] _fundWallets) public view returns (uint256) {
+        uint256 sumOfDividends = 0;
+        for (uint256 i = 0; i < fundTokens.length; i++) {
+            if (fundTokens[i].isActive()) {
+                for (uint256 j = 0; j < _fundWallets.length; j++) {
+                    uint256 dividends = fundTokens[i].unclaimedDividends(_fundWallets[j]);
+                    sumOfDividends = sumOfDividends.add(dividends);
+                }
+            }
+        }
+        return sumOfDividends;
     }
 
     /// @notice Claims available dividends for `_fundWallets` addresses
     /// @param _fundWallets Fund wallets holding the tokens used to claim dividends
     /// @param _dividendWallet Wallet on which dividends are claimed on
-    function claimDividendsBriqFundTokens(address[] _fundWallets, address _dividendWallet) public onlyOwner {
+    function claimDividendBondFundTokens(address[] _fundWallets, address _dividendWallet) public onlyOwner {
         require(_dividendWallet != address(0));
         uint256 sumOfDividends = 0;
         for (uint256 i = 0; i < _fundWallets.length; i++) {
-            uint256 dividends = claimDividendsActiveBriqFundTokens(_fundWallets[i]);
+            uint256 dividends = claimDividendsActiveBondFundTokens(_fundWallets[i]);
             sumOfDividends = sumOfDividends.add(dividends);
         }
         if (sumOfDividends > 0) {
@@ -193,7 +200,7 @@ contract BriqFundsController is Ownable {
     /// @dev Internal claim of dividends for active fund token contracts
     /// @param _to Fund wallet used as a base for calculation
     /// @return The total amount of available EUR tokens for claim
-    function claimDividendsActiveBriqFundTokens(address _to) internal returns (uint256) {
+    function claimDividendsActiveBondFundTokens(address _to) internal returns (uint256) {
         require(_to != address(0));
         uint256 sumOfDividends = 0;
         for (uint256 i = 0; i < fundTokens.length; i++) {
@@ -204,19 +211,19 @@ contract BriqFundsController is Ownable {
         }
         return sumOfDividends;
     }
-
+    
 
     /// @notice This method can be used to extract mistakenly sent tokens to fund
     ///  token contract identified with _symbol.
     /// @param _token The address of the token contract that you want to recover
     ///  set to 0 in case you want to extract ether.
-    function claimTokensBriqFund(string _symbol, address _token) public onlyOwner {
+    function claimTokensBondFund(string _symbol, address _token) public onlyOwner {
         BFTInterface fundToken = getFundBySymbol(_symbol);
         fundToken.claimTokens(_token);
     }
 
 //////////
-// Briq EUR Token proxy functions
+// Bond EUR Token proxy functions
 //////////
 
     /// @notice Transfer EUR tokens from one address to another
@@ -243,7 +250,7 @@ contract BriqFundsController is Ownable {
     function burnEURToken(uint256 _value, address _from) public onlyOwner returns (bool) {
         return eurToken.burn(_value, _from);
     }
-
+    
     /// @notice Enables or disables EUR token transfers
     /// @param _transfersEnabled True if transfers should be enabled
     function enableEURTokenTransfers(bool _transfersEnabled) public onlyOwner {
@@ -259,7 +266,7 @@ contract BriqFundsController is Ownable {
     }
 
 //////////
-// Briq Whitelist proxy functions
+// Bond Whitelist proxy functions
 //////////
 
     /// @dev Automatic whitelisting of controller if not whitelisted
@@ -350,5 +357,4 @@ contract BriqFundsController is Ownable {
 ////////////////
 
     event ClaimedTokens(address indexed _token, address indexed _owner, uint256 _amount);
-
 }

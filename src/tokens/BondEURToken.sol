@@ -1,26 +1,26 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
-import "../Libs/Controlled.sol";
-import "../Libs/SafeMath.sol";
-import "../Libs/ERC20Interface.sol";
-import "../Whitelist/WhitelistInterface.sol";
+import "../ownership/Controlled.sol";
+import "../libs/SafeMath.sol";
+import "../interfaces/ERC20Interface.sol";
+import "../interfaces/WhitelistInterface.sol";
 
-/// @dev Briq EUR Token
-contract BriqEURToken is ERC20Interface, Controlled {
+/// @dev Bond EUR Token
+contract BondEURToken is ERC20Interface, Controlled {
     using SafeMath for uint256;
 
     // ERC20 compatible total supply
     uint256 public totalSupply = 0;
 
     // Name of the token contract
-    string public constant name = "Briq EUR Token";
+    string public constant name = "Bond EUR Token";
 
     // Symbol of the token contract
     string public constant symbol = "EUR";
 
     // Number of token's decimals
     uint8 public constant decimals = 18;
-
+    
     // Flag indicating if transfers are enabled
     bool public transfersEnabled = true;
 
@@ -33,8 +33,8 @@ contract BriqEURToken is ERC20Interface, Controlled {
     // whitelist reference
     WhitelistInterface public whitelist;
 
-    /// @notice Constructor to create a BriqEURToken
-    function BriqEURToken(address _whitelist) public {
+    /// @notice Constructor to create a BondEURToken
+    constructor(address _whitelist) public {
         require(_whitelist != address(0));
         whitelist = WhitelistInterface(_whitelist);
     }
@@ -44,7 +44,7 @@ contract BriqEURToken is ERC20Interface, Controlled {
     function enableTransfers(bool _transfersEnabled) public onlyController {
         transfersEnabled = _transfersEnabled;
     }
-
+     
     /// @notice Transfer token for a specified address
     /// @param _to The address to transfer to.
     /// @param _value The amount to be transferred.
@@ -60,7 +60,7 @@ contract BriqEURToken is ERC20Interface, Controlled {
     function balanceOf(address _owner) public view returns (uint256 balance) {
         return balances[_owner];
     }
-
+  
     /// @dev Internal function to transfer tokens from one address to another
     /// @param _from address The address which you want to send tokens from
     /// @param _to address The address which you want to transfer to
@@ -83,7 +83,7 @@ contract BriqEURToken is ERC20Interface, Controlled {
     /// @return True if transfer successful
     function transferFrom(address _from, address _to, uint256 _value) public returns (bool) {
         // The controller of this contract can move tokens around at will,
-        //  this is important to recognize!
+        //  this is important to recognize! 
         if (msg.sender != controller) {
             require(transfersEnabled);
             require(_value <= allowed[_from][msg.sender]);
@@ -163,8 +163,8 @@ contract BriqEURToken is ERC20Interface, Controlled {
     /// @param _from The address from which tokens are burned.
     /// @return A boolean that indicates if the operation was successful.
     function burn(uint256 _value, address _from) public onlyController returns (bool) {
-        totalSupply = totalSupply.sub(_value);
-        balances[_from] = balances[_from].sub(_value);
+        totalSupply = totalSupply.sub(_value); 
+        balances[_from] = balances[_from].sub(_value); 
         emit Burn(_from, _value);
         emit Transfer(_from, address(0), _value);
         return true;
@@ -195,3 +195,4 @@ contract BriqEURToken is ERC20Interface, Controlled {
     event Burn(address indexed _from, uint256 _value);
     event ClaimedTokens(address indexed _token, address indexed _controller, uint256 _amount);
 }
+

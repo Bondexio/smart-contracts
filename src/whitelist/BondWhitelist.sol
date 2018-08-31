@@ -1,10 +1,10 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
-import "../Libs/Controlled.sol";
-import "../Libs/ERC20Interface.sol";
+import "../ownership/Controlled.sol";
+import "../interfaces/ERC20Interface.sol";
 
-/// @dev Briq Whitelist
-contract BriqWhitelist is Controlled {
+/// @dev Bond Whitelist
+contract BondWhitelist is Controlled {
 
     // mapping showing if address is whitelisted or not
     mapping(address => bool) whitelisted;

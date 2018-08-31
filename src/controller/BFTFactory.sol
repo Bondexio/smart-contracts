@@ -1,12 +1,11 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
-import "./BFT.sol";
-import "../Libs/Controlled.sol";
-import "../Libs/ERC20Interface.sol";
+import "../tokens/BondFundToken.sol";
+import "../ownership/Controlled.sol";
+import "../interfaces/ERC20Interface.sol";
 
-/// @dev Briq Fund Token Factory
+/// @dev Bond Fund Token Factory
 contract BFTFactory is Controlled {
-
     /// @notice Creation or deployment of fund token contracts
     /// @param _name Name of the fund token contract
     /// @param _symbol Symbol, acronym or code of the fund token
@@ -17,24 +16,24 @@ contract BFTFactory is Controlled {
     /// @param _documentURL IPFS URL
     /// @param _documentHash Integrity check of IPFS stored JSON doc
     /// @return The address of the fund token
-    function createBriqFundToken(
-        string _name,
-        string _symbol,
-        uint256 _mintCap,
-        uint256 _startDate,
-        uint256 _maturityDate,
-        address _whitelist,
-        string _documentURL,
+    function createBondFundToken(
+        string _name, 
+        string _symbol, 
+        uint256 _mintCap, 
+        uint256 _startDate, 
+        uint256 _maturityDate, 
+        address _whitelist, 
+        string _documentURL, 
         uint256 _documentHash
     ) public onlyController returns (address) {
-        BriqFundToken token = new BriqFundToken(
-            _name,
-            _symbol,
+        BondFundToken token = new BondFundToken (
+            _name, 
+            _symbol, 
             _mintCap,
-            _startDate,
-            _maturityDate,
-            _whitelist,
-            _documentURL,
+            _startDate, 
+            _maturityDate, 
+            _whitelist, 
+            _documentURL, 
             _documentHash
         );
         token.changeController(controller);
@@ -62,6 +61,9 @@ contract BFTFactory is Controlled {
         emit ClaimedTokens(_token, controller, balance);
     }
 
-    event ClaimedTokens(address indexed _token, address indexed _owner, uint256 _amount);
+    event ClaimedTokens(address indexed _token, address indexed _owner, uint256 _amount);  
 
 }
+
+
+

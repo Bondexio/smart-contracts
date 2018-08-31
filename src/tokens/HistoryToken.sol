@@ -1,28 +1,28 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
-import "../Libs/SafeMath.sol";
-import "../Libs/Controlled.sol";
-import "../Whitelist/WhitelistInterface.sol";
+import "../libs/SafeMath.sol";
+import "../ownership/Controlled.sol";
+import "../interfaces//WhitelistInterface.sol";
 
 /// @dev History Token
 contract HistoryToken is Controlled {
     using SafeMath for uint256;
 
-    // Token identifier or code, usually acronym
-    string public symbol;
+    // Token identifier or code, usually acronym 
+    string public symbol; 
 
-    // Number of decimals of the smallest unit
+    // Number of decimals of the smallest unit                
     uint8 public decimals;
 
-    // Timestamp representing start of token validity, inclusive
+    // Timestamp representing start of token validity, inclusive              
     uint256 public startDate;
-
+    
     // Timestamp representing start of token validity, inclusive
     uint256 public maturityDate;
 
     // Reference to whitelist contract
     WhitelistInterface public whitelist;
-
+    
     /// @dev `Checkpoint` is the structure that attaches a block number to a
     ///  given value, the block number attached is the one that last changed the value
     struct  Checkpoint {
@@ -58,14 +58,14 @@ contract HistoryToken is Controlled {
 
     /// @notice Constructor to create a HistoryToken
     /// @param _symbol The address of the recipient
-    function HistoryToken(string _symbol, uint8 _decimals, uint256 _mintCap, uint256 _startDate, uint256 _maturityDate, address _whitelist) public {
+    constructor(string _symbol, uint8 _decimals, uint256 _mintCap, uint256 _startDate, uint256 _maturityDate, address _whitelist) public {
         require(_whitelist != address(0));
         symbol = _symbol;
         decimals = _decimals;
         mintCap = _mintCap;
         startDate = _startDate;
         maturityDate = _maturityDate;
-        whitelist = WhitelistInterface(_whitelist);
+        whitelist = WhitelistInterface(_whitelist);                        
         transfersEnabled = true;
         active = true;
     }
@@ -111,35 +111,34 @@ contract HistoryToken is Controlled {
     /// @param _amount The amount of tokens to be transferred
     /// @return True if the transfer was successful
     function doTransfer(address _from, address _to, uint256 _amount) internal {
+        // Check if both _from and _to are whitelisted
+        require(whitelist.isWhitelisted(_from) && whitelist.isWhitelisted(_to));
 
-           // Check if both _from and _to are whitelisted
-           require(whitelist.isWhitelisted(_from) && whitelist.isWhitelisted(_to));
+        if (_amount == 0) {
+            emit Transfer(_from, _to, _amount);    // Follow the spec to louch the event when transfer 0
+            return;
+        }
 
-           if (_amount == 0) {
-               emit Transfer(_from, _to, _amount);    // Follow the spec to louch the event when transfer 0
-               return;
-           }
+        // Do not allow transfer to 0x0 or the token contract itself
+        require((_to != address(0)) && (_to != address(this)));
 
-           // Do not allow transfer to 0x0 or the token contract itself
-           require((_to != address(0)) && (_to != address(this)));
+        // If the amount being transfered is more than the balance of the
+        //  account the transfer throws
+        uint256 previousBalanceFrom = balanceOfAt(_from, block.number);
+        require(previousBalanceFrom >= _amount);
 
-           // If the amount being transfered is more than the balance of the
-           //  account the transfer throws
-           uint256 previousBalanceFrom = balanceOfAt(_from, block.number);
-           require(previousBalanceFrom >= _amount);
+        // First update the balance array with the new value for the address
+        //  sending the tokens
+        updateValueAtNow(balances[_from], previousBalanceFrom.sub(_amount));
 
-           // First update the balance array with the new value for the address
-           //  sending the tokens
-           updateValueAtNow(balances[_from], previousBalanceFrom.sub(_amount));
+        // Then update the balance array with the new value for the address
+        //  receiving the tokens
+        uint256 previousBalanceTo = balanceOfAt(_to, block.number);
+        require(previousBalanceTo + _amount >= previousBalanceTo); // Check for overflow
+        updateValueAtNow(balances[_to], previousBalanceTo.add(_amount));
 
-           // Then update the balance array with the new value for the address
-           //  receiving the tokens
-           uint256 previousBalanceTo = balanceOfAt(_to, block.number);
-           require(previousBalanceTo + _amount >= previousBalanceTo); // Check for overflow
-           updateValueAtNow(balances[_to], previousBalanceTo.add(_amount));
-
-           // An event to make the transfer easy to find on the blockchain
-           emit Transfer(_from, _to, _amount);
+        // An event to make the transfer easy to find on the blockchain
+        emit Transfer(_from, _to, _amount);
     }
 
     /// @param _owner The address that's balance is being requested
@@ -242,7 +241,7 @@ contract HistoryToken is Controlled {
         emit Transfer(address(0), _owner, _amount);
         return true;
     }
-
+    
 ////////////////
 // Enable tokens transfers, closing and validity check
 ////////////////
@@ -291,7 +290,7 @@ contract HistoryToken is Controlled {
     /// @param _block The block number to retrieve the value at
     /// @return The number of tokens being queried
     function getValueAt(Checkpoint[] storage checkpoints, uint256 _block) view internal returns (uint256) {
-        if (checkpoints.length == 0)
+        if (checkpoints.length == 0) 
             return 0;
 
         // Shortcut for the actual value
@@ -320,13 +319,13 @@ contract HistoryToken is Controlled {
     /// @param _value The new number of tokens
     function updateValueAtNow(Checkpoint[] storage checkpoints, uint256 _value) internal  {
         if ((checkpoints.length == 0) || (checkpoints[checkpoints.length - 1].fromBlock < block.number)) {
-               Checkpoint storage newCheckPoint = checkpoints[checkpoints.length++];
-               newCheckPoint.fromBlock =  uint128(block.number);
-               newCheckPoint.value = uint128(_value);
-           } else {
-               Checkpoint storage oldCheckPoint = checkpoints[checkpoints.length - 1];
-               oldCheckPoint.value = uint128(_value);
-           }
+            Checkpoint storage newCheckPoint = checkpoints[checkpoints.length++];
+            newCheckPoint.fromBlock =  uint128(block.number);
+            newCheckPoint.value = uint128(_value);
+        } else {
+            Checkpoint storage oldCheckPoint = checkpoints[checkpoints.length - 1];
+            oldCheckPoint.value = uint128(_value);
+        }
     }
 
     /// @dev fallback function which prohibits payment
@@ -361,145 +360,4 @@ contract HistoryToken is Controlled {
     event ClaimedTokens(address indexed _token, address indexed _controller, uint256 _amount);
     event Transfer(address indexed _from, address indexed _to, uint256 _amount);
     event Approval(address indexed _owner, address indexed _spender, uint256 _amount);
-
-}
-/// @dev Dividend History Token
-contract DividendHistoryToken is HistoryToken {
-  using SafeMath for uint256;
-
-  /// @dev `Dividend` is the structure that represents a dividend deposit
-  struct Dividend {
-    // Block number of deposit
-    uint256 blockNumber;
-    // Block timestamp of deposit
-    uint256 timestamp;
-    // Deposit amount
-    uint256 amount;
-    // Total current claimed amount
-    uint256 claimedAmount;
-    // Total supply at the block
-    uint256 totalSupply;
-    // Indicates if address has already claimed the dividend
-    mapping (address => bool) claimed;
-  }
-
-  // Array of depositeddividends
-  Dividend[] public dividends;
-
-  // Indicates the newest dividends address has claimed
-  mapping (address => uint256) dividendsClaimed;
-
-////////////////
-// Dividend deposits
-////////////////
-
-   /// @notice This method can be used by the controller to deposit dividends.
-   /// @param _amount The amount that is going to be created as new dividend
-  function depositDividend(uint256 _amount) public onlyController onlyActive {
-    uint256 currentSupply = totalSupplyAt(block.number);
-    require(currentSupply > 0);
-    uint256 dividendIndex = dividends.length;
-    require(block.number > 0);
-    uint256 blockNumber = block.number - 1;
-    dividends.push(Dividend(blockNumber, now, _amount, 0, currentSupply));
-    emit DividendDeposited(msg.sender, blockNumber, _amount, currentSupply, dividendIndex);
-  }
-
-////////////////
-// Dividend claims
-////////////////
-
-   /// @dev Claims dividend on `_dividendIndex` to `_owner` address.
-   /// @param _owner The address where dividends are registered to be claimed
-   /// @param _dividendIndex The index of the dividend to claim
-   /// @return The total amount of available EUR tokens for claim
-  function claimDividendByIndex(address _owner, uint256 _dividendIndex) internal returns (uint256) {
-    uint256 claim = calculateClaimByIndex(_owner, _dividendIndex);
-    Dividend storage dividend = dividends[_dividendIndex];
-    dividend.claimed[_owner] = true;
-    dividend.claimedAmount = dividend.claimedAmount.add(claim);
-    return claim;
-  }
-
-   /// @dev Calculates available dividend on `_dividendIndex` for `_owner` address.
-   /// @param _owner Address of belonging amount
-   /// @param _dividendIndex The index of the dividend for which calculation is done
-   /// @return The total amount of available EUR tokens for claim
-  function calculateClaimByIndex(address _owner, uint256 _dividendIndex) internal view returns (uint256) {
-    Dividend storage dividend = dividends[_dividendIndex];
-    uint256 balance = balanceOfAt(_owner, dividend.blockNumber);
-    uint256 claim = balance.mul(dividend.amount).div(dividend.totalSupply);
-    return claim;
-  }
-
-   /// @notice Calculates available dividends for `_owner` address.
-   /// @param _owner Address of belonging amount
-   /// @return The total amount of available EUR tokens for claim
-  function unclaimedDividends(address _owner) public view returns (uint256) {
-    uint256 sumOfDividends = 0;
-    if (dividendsClaimed[_owner] < dividends.length) {
-        for (uint256 i = dividendsClaimed[_owner]; i < dividends.length; i++) {
-            if (!dividends[i].claimed[_owner]) {
-                uint256 dividend = calculateClaimByIndex(_owner, i);
-                sumOfDividends = sumOfDividends.add(dividend);
-            }
-        }
-    }
-    return sumOfDividends;
-  }
-
-   /// @notice Claims available dividends for `_owner` address.
-   /// @param _owner Address for which dividends are going to be claimed
-   /// @return The total amount of available EUR tokens for claim
-  function claimAllDividends(address _owner) public onlyController onlyActive returns (uint256) {
-    uint256 sumOfDividends = 0;
-    if (dividendsClaimed[_owner] < dividends.length) {
-        for (uint256 i = dividendsClaimed[_owner]; i < dividends.length; i++) {
-            if (!dividends[i].claimed[_owner]) {
-                dividendsClaimed[_owner] = SafeMath.add(i, 1);
-                uint256 dividend = claimDividendByIndex(_owner, i);
-                sumOfDividends = sumOfDividends.add(dividend);
-            }
-        }
-        emit DividendClaimed(_owner, sumOfDividends);
-    }
-    return sumOfDividends;
-  }
-
-////////////////
-// Events
-////////////////
-
-  event DividendDeposited (address indexed _depositor, uint256 _blockNumber, uint256 _amount, uint256 _totalSupply, uint256 _dividendIndex);
-  event DividendClaimed (address _fundWallet, uint256 _amount);
-
-}
-
-/// @dev Briq Fund Token
-contract BriqFundToken is DividendHistoryToken {
-
-    // Token name
-    string public name;
-    // IPFS URL
-    string public documentURL;
-    // Integrity check of IPFS stored JSON doc
-    uint256 public documentHash;
-    // An arbitrary versioning scheme
-    string public constant version = "v1";
-
-    /// @notice Constructor to create a BriqFundToken
-    /// @param _symbol The address of the recipient
-    function BriqFundToken (string _name,
-                           string _symbol,
-                           uint256 _mintCap,
-                           uint256 _startDate,
-                           uint256 _maturityDate,
-                           address _whitelist,
-                           string _documentURL,
-                           uint256 _documentHash) HistoryToken(_symbol, 18, _mintCap, _startDate, _maturityDate, _whitelist) public {
-        name = _name;
-        documentURL = _documentURL;
-        documentHash = _documentHash;
-    }
-
 }

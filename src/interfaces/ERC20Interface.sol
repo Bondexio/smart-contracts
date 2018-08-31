@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
 /// @dev ERC20 Interface
 contract ERC20Interface {

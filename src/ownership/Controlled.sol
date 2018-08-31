@@ -1,4 +1,4 @@
-pragma solidity ^0.4.21;
+pragma solidity ^0.4.24;
 
 /// @dev Controlled
 contract Controlled {
@@ -13,7 +13,7 @@ contract Controlled {
     }
 
     /// @notice Constructor to initiate a Controlled contract
-    function Controlled() public { 
+    constructor() public { 
         controller = msg.sender;
     }
 
